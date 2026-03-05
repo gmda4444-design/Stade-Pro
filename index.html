@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FieldBook | نظام إدارة الملاعب</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-light: #6b7280;
+            --danger: #ef4444;
+            --border-radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); }
+
+        header {
+            background-color: var(--card-bg); padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex;
+            justify-content: center; align-items: center; position: sticky; top: 0; z-index: 100;
+        }
+        header h1 { color: var(--primary); font-weight: 900; font-size: 28px; cursor: pointer; user-select: none; }
+
+        .btn {
+            background-color: var(--primary); color: white; border: none; padding: 12px 20px;
+            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 15px; transition: all 0.3s ease; display: inline-block; text-align: center;
+        }
+        .btn:hover { background-color: var(--primary-dark); transform: translateY(-2px); }
+        .btn:active { transform: translateY(0); }
+        .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+        .btn-outline:hover { background: var(--primary); color: white; }
+        .btn-danger { background-color: var(--danger); }
+        .btn-success { background-color: #22c55e; }
+        .btn-warning { background-color: #f59e0b; color: white; }
+
+        .container {
+            width: 95%; max-width: 1000px; margin: 30px auto; padding: 30px;
+            background: var(--card-bg); border-radius: var(--border-radius); box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        .container-sm { max-width: 450px; }
+
+        .view { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .view.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* حركة النبض للرسالة الحمراء */
+        @keyframes pulseAlert {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .warning-banner {
+            background-color: var(--danger); color: white; padding: 15px; border-radius: 8px;
+            text-align: center; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 20px;
+            animation: pulseAlert 2s infinite; display: none;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #374151; }
+        input, select {
+            width: 100%; padding: 12px 15px; border: 1px solid #d1d5db; border-radius: 8px; outline: none; font-size: 15px; transition: 0.3s;
+        }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+
+        .price-box { background: #ecfdf5; padding: 20px; border-radius: 8px; text-align: center; margin: 25px 0; border: 2px dashed var(--primary); }
+        .payment-info { background: #fffbeb; padding: 20px; border-radius: 8px; border: 1px solid #fde68a; margin-bottom: 20px; display: none; text-align: center; }
+        .payment-info h3 { color: #d97706; margin-bottom: 10px;}
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; background: white; }
+        th, td { padding: 15px; border-bottom: 1px solid #e5e7eb; text-align: right; }
+        th { background: #f9fafb; color: var(--text-light); font-weight: 700; }
+        tr:hover { background-color: #f9fafb; }
+
+        .badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .badge-pending { background: #fef3c7; color: #d97706; }
+        .badge-active { background: #d1fae5; color: #059669; }
+        .badge-inactive { background: #fee2e2; color: #b91c1c; }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; background: #f3f4f6; padding: 5px; border-radius: 10px; }
+        .tab { flex: 1; text-align: center; padding: 12px; cursor: pointer; border-radius: 8px; font-weight: 600; color: var(--text-light); transition: 0.3s; }
+        .tab.active { background: white; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);
+            display: none; justify-content: center; align-items: center; z-index: 999; backdrop-filter: blur(4px);
+        }
+        .modal { background: white; padding: 30px; border-radius: var(--border-radius); width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto;}
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
+        .stat-card {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;
+            text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); border-color: var(--primary); }
+        .stat-card h3 { color: var(--text-light); font-size: 14px; margin-bottom: 10px; }
+        .stat-card h1 { color: var(--text-main); font-size: 28px; font-weight: 900; }
+        .stat-card .highlight { color: var(--primary); }
+
+        .text-center { text-align: center; } .mb-4 { margin-bottom: 25px; }
+        .action-btns { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 onclick="handleLogoClick()">FieldBook</h1>
+    </header>
+
+    <!-- شاشة تسجيل الدخول -->
+    <div class="container container-sm view active" id="login-view">
+        <div class="text-center mb-4">
+            <h2 style="color: var(--primary); margin-bottom: 8px;">تسجيل الدخول</h2>
+            <p style="color: var(--text-light);">أدخل بيانات ملعبك للوصول للوحة الحجوزات</p>
+        </div>
+        <div class="form-group"><label>اسم الملعب</label><input type="text" id="loginFieldName" placeholder="أدخل اسم الملعب (طابق الاسم المسجل)"></div>
+        <div class="form-group"><label>رقم الهاتف (الواتساب)</label><input type="number" id="loginPhone" placeholder="أدخل رقم الهاتف"></div>
+        <div class="form-group"><label>رمز التفعيل</label><input type="password" id="loginCode" placeholder="أدخل الرمز السري للملعب"></div>
+        
+        <button type="button" class="btn" style="width: 100%; margin-top: 10px; font-size: 16px;" onclick="login()">دخول إلى لوحة التحكم</button>
+        
+        <div style="margin-top: 30px; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+            <p style="color: var(--text-light); margin-bottom: 10px;">ليس لديك اشتراك معنا؟</p>
+            <button type="button" class="btn btn-outline" style="width: 100%;" onclick="showView('subscription-view')">طلب اشتراك ملعب جديد</button>
+        </div>
+    </div>
+
+    <!-- شاشة قفل النظام (عند انتهاء الاشتراك) -->
+    <div class="container view" id="expired-view" style="max-width: 500px; text-align: center; margin-top: 10vh;">
+        <h1 style="color: var(--danger); font-size: 60px; margin-bottom: 10px;">🔒</h1>
+        <h2 style="color: var(--danger); margin-bottom: 15px;">انتهى اشتراكك، عليك تجديده!</h2>
+        <p style="color: var(--text-light); margin-bottom: 30px; font-size: 16px; line-height: 1.6;">
+            لقد انتهت فترة اشتراكك في نظام FieldBook وتم قفل لوحة التحكم.<br> يرجى تجديد الاشتراك الآن لتتمكن من العودة لإدارة حجوزاتك بشكل طبيعي.
+        </p>
+        <button type="button" class="btn btn-danger" style="width: 100%; font-size: 18px; padding: 15px; animation: pulseAlert 2s infinite;" onclick="goToAutoRenewal()">تجديد الاشتراك الآن</button>
+        <button type="button" class="btn btn-outline" style="width: 100%; margin-top: 15px;" onclick="logout()">عودة للدخول</button>
+    </div>
+
+    <!-- نموذج الاشتراك والتجديد -->
+    <div class="container view" id="subscription-view">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 id="formTitle">طلب اشتراك الملاعب</h2>
+            <button type="button" class="btn btn-outline" style="padding: 8px 15px; font-size: 14px;" onclick="showView('login-view')">عودة للدخول</button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="setSubMode('new', this)">اشتراك جديد</div>
+            <div class="tab" id="renewTabBtn" onclick="setSubMode('renewal', this)">تجديد اشتراك</div>
+        </div>
+
+        <form id="subscriptionForm">
+            <div id="renewalCodeGroup" class="form-group" style="display: none;">
+                <label>رمز التفعيل القديم (للتجديد)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="oldCode" placeholder="أدخل رمز التفعيل القديم الخاص بك">
+                    <button type="button" class="btn" onclick="verifyOldCode()">تحقق</button>
+                </div>
+            </div>
+
+            <div id="mainFormFields">
+                <div class="form-group"><label>اسم الملعب</label><input type="text" id="fieldName" placeholder="مثال: ملعب الأبطال" required></div>
+                <div class="form-group"><label>الموقع / المكان</label><input type="text" id="location" placeholder="أدخل المدينة والمنطقة" required></div>
+                <div class="form-group"><label>رقم الواتساب (للتواصل وإرسال الرمز)</label><input type="number" id="phone" placeholder="أدخل رقم الهاتف" required></div>
+                
+                <div style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>نوع الاشتراك</label>
+                        <select id="plan" onchange="calculatePrice()">
+                            <option value="monthly">باقة شهرية</option>
+                            <option value="yearly">باقة سنوية</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>عدد مستخدمي النظام</label>
+                        <input type="number" id="usersCount" min="1" value="1" oninput="calculatePrice()" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>كود التخفيض (إن وجد)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="promoCode" placeholder="أدخل كود الخصم هنا">
+                        <button type="button" class="btn btn-outline" onclick="applyPromo()">تطبيق الكود</button>
+                    </div>
+                </div>
+
+                <div class="price-box">
+                    <h3 style="color: var(--text-light); font-size: 16px;">المبلغ الإجمالي المطلوب دفعه</h3>
+                    <h1 id="totalPriceDisplay" style="color: var(--primary); font-size: 32px; margin-top: 10px;">200 أوقية جديدة</h1>
+                </div>
+
+                <div class="form-group">
+                    <label>وسيلة الدفع المفضلة</label>
+                    <select id="bank" onchange="showPaymentInstructions()" required>
+                        <option value="">-- اختر تطبيق البنك --</option>
+                        <option value="Bankily">بنكيلي (Bankily)</option>
+                        <option value="Sadad">السداد (Sadad)</option>
+                        <option value="Masrvi">مصرفي (Masrvi)</option>
+                        <option value="Click">كليك (Click)</option>
+                        <option value="GazaPay">غزة أبي (Gaza Pay)</option>
+                        <option value="Rissidi">رصيدي (Rissidi)</option>
+                        <option value="Amanti">أمانتي (Amanti)</option>
+                        <option value="Bimbank">بيم بانك (Bimbank)</option>
+                        <option value="Mouripost">موريبوصت (Mouripost)</option>
+                        <option value="BCIPAY">بي سي آي باي (BCI PAY)</option>
+                        <option value="MoovMoney">موف موني (Moov Money)</option>
+                    </select>
+                </div>
+
+                <div class="payment-info" id="paymentInstructions">
+                    <h3>تعليمات الدفع</h3>
+                    <p style="color: var(--text-light); margin-bottom: 15px;">الرجاء تحويل المبلغ الإجمالي إلى هذا الرقم المعتمد عبر التطبيق الذي اخترته:</p>
+                    <h2 style="font-size: 36px; color: #b45309; letter-spacing: 2px;"><span id="transferNumber"></span></h2>
+                    <p style="color: var(--text-light); margin-top: 15px; font-size: 14px;">بعد التحويل، قم برفع صورة الإيصال في الخانة أدناه.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>صورة إثبات الدفع (الإيصال)</label>
+                    <input type="file" id="paymentImage" accept="image/*" required style="border: 1px dashed #d1d5db; padding: 20px; text-align: center; background: #f9fafb;">
+                </div>
+
+                <button type="button" class="btn" style="width: 100%; margin-top: 10px; font-size: 18px; padding: 15px;" id="submitBtn" onclick="submitSubscription()">تأكيد وإرسال الطلب</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- لوحة تحكم صاحب الملعب -->
+    <div class="container view" id="dashboard-view">
+        
+        <!-- الشريط الأحمر الذكي قبل الانتهاء بيوم -->
+        <div id="renewalWarningBanner" class="warning-banner" onclick="goToAutoRenewal()">
+            ⚠️ اشتراكك ينتهي غداً! اضغط هنا لتجديد الاشتراك فوراً وتجنب توقف النظام.
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+            <div>
+                <h2 id="ownerWelcome" style="color: var(--primary); font-size: 26px;">لوحة التحكم</h2>
+                <p style="margin-top: 5px; font-size: 14px;">تاريخ انتهاء الاشتراك: <span id="subEndDate" style="font-weight: bold; color: var(--danger);"></span></p>
+            </div>
+            <button type="button" class="btn btn-outline" onclick="logout()">تسجيل الخروج</button>
+        </div>
+
+        <div class="tabs" style="max-width: 600px;">
+            <div class="tab active" id="tabRes" onclick="switchDashTab('reservations', this)">📅 الحجوزات</div>
+            <div class="tab" id="tabStats" onclick="switchDashTab('statistics', this)">📊 الإحصائيات</div>
+            <div class="tab" id="tabSettings" onclick="switchDashTab('settings', this)">⚙️ إعدادات الملعب</div>
+        </div>
+
+        <div id="dash-reservations">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: var(--text-main);">جدول الحجوزات</h3>
+                <button type="button" class="btn" onclick="openResModal()">+ إضافة حجز جديد</button>
+            </div>
+            <div style="overflow-x: auto; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الوقت</th>
+                            <th>الفريق</th>
+                            <th>الهاتف</th>
+                            <th>المدة</th>
+                            <th>السعر</th>
+                            <th style="text-align: center;">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reservationsTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="dash-statistics" style="display: none;">
+            <h3 style="color: var(--text-main); margin-bottom: 10px;">نظرة عامة على الأداء</h3>
+            <p style="color: var(--text-light); margin-bottom: 20px;">تحليل ذكي لبيانات حجوزات ملعبك لمساعدتك في اتخاذ قرارات أفضل.</p>
+            <div class="stats-grid">
+                <div class="stat-card"><h3>إجمالي الحجوزات</h3><h1 id="statTotalRes" class="highlight">0</h1></div>
+                <div class="stat-card"><h3>إجمالي الدخل (أوقية)</h3><h1 id="statTotalRev">0</h1></div>
+                <div class="stat-card"><h3>أكثر الأيام طلباً</h3><h1 id="statBestDay" class="highlight">-</h1></div>
+                <div class="stat-card"><h3>ساعة الذروة</h3><h1 id="statBestHour">-</h1></div>
+            </div>
+        </div>
+
+        <div id="dash-settings" style="display: none;">
+            <h3 style="color: var(--text-main); margin-bottom: 15px;">إعدادات الموقع والتواصل</h3>
+            <div style="background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; max-width: 600px;">
+                <div class="form-group">
+                    <label>رابط موقع الملعب على خرائط جوجل (Google Maps)</label>
+                    <input type="url" id="fieldMapLink" placeholder="انسخ والصق رابط خرائط جوجل هنا...">
+                    <small style="color: var(--text-light); display: block; margin-top: 5px;">هذا الرابط سيتم إرساله للزبائن تلقائياً في رسالة الواتساب للوصول للملعب بسهولة.</small>
+                </div>
+                <button type="button" class="btn" onclick="saveFieldSettings()">حفظ الإعدادات</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- لوحة المشرف -->
+    <div class="container view" id="admin-view" style="max-width: 1150px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="color: var(--primary-dark);">لوحة إدارة النظام (المشرف)</h2>
+            <button type="button" class="btn btn-outline" onclick="logout()">خروج</button>
+        </div>
+        
+        <div class="tabs" style="margin-top: 20px;">
+            <div class="tab active" id="tabReq" onclick="switchAdminTab('requests', this)">الطلبات الواردة</div>
+            <div class="tab" id="tabFields" onclick="switchAdminTab('fields', this)">إدارة الملاعب</div>
+            <div class="tab" id="tabPromo" onclick="switchAdminTab('promos', this)">نظام الخصومات</div>
+        </div>
+
+        <!-- قسم الطلبات الواردة -->
+        <div id="adminRequestsView">
+            <div style="overflow-x: auto; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>النوع</th>
+                            <th>الملعب</th>
+                            <th>الموقع</th>
+                            <th>الهاتف</th>
+                            <th>الباقة</th>
+                            <th>المبلغ</th>
+                            <th>البنك</th>
+                            <th>صورة الدفع</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestsTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- قسم إدارة الملاعب -->
+        <div id="adminFieldsView" style="display: none;">
+            <button type="button" class="btn mb-4" onclick="document.getElementById('addManualFieldModal').style.display='flex'">+ إضافة ملعب يدوياً</button>
+            <div style="overflow-x: auto; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الملعب</th>
+                            <th>رقم الهاتف</th>
+                            <th>نهاية الاشتراك</th>
+                            <th>الحالة</th>
+                            <th>الرمز السري</th>
+                            <th style="text-align: center;">إجراءات الإدارة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminFieldsTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- قسم الخصومات -->
+        <div id="adminPromosView" style="display: none;">
+            <button type="button" class="btn mb-4" onclick="document.getElementById('promoModal').style.display='flex'">+ إصدار كود خصم جديد</button>
+            <div style="overflow-x: auto; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>كود الخصم</th>
+                            <th>نسبة الخصم %</th>
+                            <th>حد الاستخدام</th>
+                            <th>المستخدم فعلياً</th>
+                            <th>تاريخ الانتهاء</th>
+                            <th>حالة الكود</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="promosTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- النوافذ المنبثقة -->
+    <div class="modal-overlay" id="adminLoginModal">
+        <div class="modal text-center">
+            <h3 style="color: var(--primary-dark); margin-bottom: 20px;">دخول آمن (للمشرفين)</h3>
+            <input type="text" id="adminUsername" placeholder="اسم المستخدم" style="margin-bottom: 15px;">
+            <input type="password" id="adminPassword" placeholder="كلمة المرور" style="margin-bottom: 25px;">
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="flex: 2;" onclick="adminLogin()">تسجيل الدخول</button>
+                <button class="btn btn-danger" style="flex: 1;" onclick="document.getElementById('adminLoginModal').style.display='none'">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="resModal">
+        <div class="modal">
+            <h3 style="margin-bottom: 15px; color: var(--primary);">تسجيل حجز جديد</h3>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;"><label>تاريخ الحجز</label><input type="date" id="resDate"></div>
+                <div class="form-group" style="flex: 1;"><label>الوقت</label><input type="time" id="resTime"></div>
+            </div>
+            <div class="form-group"><label>اسم الفريق أو المستأجر</label><input type="text" id="resTeam" placeholder="مثال: شباب العاصمة"></div>
+            <div class="form-group"><label>رقم هاتف المستأجر (واتساب)</label><input type="number" id="resPhone" placeholder="الرقم لإرسال التنبيه"></div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;"><label>المدة (بالساعات)</label><input type="number" id="resDuration" value="1" min="1"></div>
+                <div class="form-group" style="flex: 1;"><label>السعر الكلي</label><input type="number" id="resPrice"></div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button type="button" class="btn" style="flex: 2;" onclick="saveReservation()">حفظ وتأكيد</button>
+                <button type="button" class="btn btn-outline" style="flex: 1;" onclick="document.getElementById('resModal').style.display='none'">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="promoModal">
+        <div class="modal">
+            <h3 style="margin-bottom: 15px; color: var(--primary);">إصدار كود خصم</h3>
+            <div class="form-group"><label>نص الكود</label><input type="text" id="pCode" style="text-transform: uppercase;"></div>
+            <div class="form-group"><label>نسبة الخصم المئوية (%)</label><input type="number" id="pPercent" max="100"></div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;"><label>الحد الأقصى للاستخدام</label><input type="number" id="pLimit" value="50"></div>
+                <div class="form-group" style="flex: 1;"><label>تاريخ الانتهاء</label><input type="date" id="pExpire"></div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button type="button" class="btn" style="flex: 2;" onclick="savePromo()">حفظ وتفعيل</button>
+                <button type="button" class="btn btn-outline" style="flex: 1;" onclick="document.getElementById('promoModal').style.display='none'">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="addManualFieldModal">
+        <div class="modal">
+            <h3 style="margin-bottom: 15px; color: var(--primary);">إضافة ملعب وتسجيل حساب</h3>
+            <div class="form-group"><label>اسم الملعب</label><input type="text" id="manFieldName"></div>
+            <div class="form-group"><label>رقم هاتف إدارة الملعب</label><input type="number" id="manFieldPhone"></div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;"><label>نوع الاشتراك</label><select id="manFieldPlan"><option value="monthly">شهري</option><option value="yearly">سنوي</option></select></div>
+                <div class="form-group" style="flex: 1;"><label>عدد المستخدمين</label><input type="number" id="manFieldUsers" value="1" min="1"></div>
+            </div>
+            <div class="form-group"><label>تاريخ بداية الاشتراك</label><input type="date" id="manFieldStartDate"></div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button type="button" class="btn" style="flex: 2;" onclick="saveManualField()">حفظ وتوليد الرمز</button>
+                <button type="button" class="btn btn-outline" style="flex: 1;" onclick="document.getElementById('addManualFieldModal').style.display='none'">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="renewFieldModal">
+        <div class="modal text-center">
+            <h3 style="margin-bottom: 15px; color: var(--primary);">تجديد صلاحية الملعب</h3>
+            <div class="form-group" style="text-align: right;">
+                <label>اختر فترة التجديد</label>
+                <select id="renewPlanOption">
+                    <option value="monthly">تمديد شهر إضافي</option>
+                    <option value="yearly">تمديد سنة كاملة</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn" style="flex: 2;" onclick="confirmRenewField()">تأكيد التجديد</button>
+                <button type="button" class="btn btn-outline" style="flex: 1;" onclick="document.getElementById('renewFieldModal').style.display='none'">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= سكربت النظام ================= -->
+    <script>
+        const SUPABASE_URL = 'https://jadjwccqltipeyheljvg.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphZGp3Y2NxbHRpcGV5aGVsanZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjczMTQxMiwiZXhwIjoyMDg4MzA3NDEyfQ.usWa2csuVNdtLn4wRLZXg2xpQandkbRG-pnB-0vT0ng';
+        
+        let dbClient = null;
+        try { if (window.supabase) dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (error) { console.error("Database connection error", error); }
+
+        let currentMode = 'new';
+        let currentDiscount = 0;
+        let finalPrice = 200;
+        let verifiedRenewalCode = false;
+        
+        let currentField = null; 
+        let allReservations =[]; 
+        let globalAdminRequests =[]; 
+        let currentRenewFieldId = null;
+        let currentRenewFieldEndDate = null;
+
+        // ================= دالة النسخ (معدلة لتعمل 100% على جميع المتصفحات) ================= //
+        function copyCode(code) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(code).then(() => {
+                    alert('تم نسخ الرمز بنجاح: ' + code);
+                }).catch(e => fallbackCopyTextToClipboard(code));
+            } else {
+                fallbackCopyTextToClipboard(code);
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0"; textArea.style.left = "0"; textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus(); textArea.select();
+            try {
+                var successful = document.execCommand('copy');
+                if (successful) alert('تم نسخ الرمز بنجاح: ' + text);
+                else alert('يرجى نسخ الرمز يدوياً: ' + text);
+            } catch (err) { alert('يرجى نسخ الرمز يدوياً: ' + text); }
+            document.body.removeChild(textArea);
+        }
+
+        function generateComplexCode(length = 8) {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$*&";
+            let code = "";
+            for (let i = 0; i < length; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            return code;
+        }
+
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            window.scrollTo(0, 0);
+            if(viewId === 'admin-view') loadAdminRequests();
+            if(viewId === 'dashboard-view') loadReservations();
+        }
+        function logout() { currentField = null; showView('login-view'); }
+
+        let logoClicks = 0; let logoClickTimeout;
+        function handleLogoClick() {
+            logoClicks++; clearTimeout(logoClickTimeout);
+            logoClickTimeout = setTimeout(() => { logoClicks = 0; }, 1500); 
+            if (logoClicks >= 5) { document.getElementById('adminLoginModal').style.display = 'flex'; logoClicks = 0; }
+        }
+
+        async function adminLogin() {
+            if(!dbClient) return alert("خطأ في الاتصال بقاعدة البيانات.");
+            const username = document.getElementById('adminUsername').value;
+            const pass = document.getElementById('adminPassword').value;
+            if(!username || !pass) return alert("يرجى إدخال اسم المستخدم وكلمة المرور.");
+            
+            const { data, error } = await dbClient.from('users').select('*').eq('phone', username).eq('password', pass).eq('role', 'admin').single();
+            if (error || !data) return alert("بيانات الدخول غير صحيحة!");
+            
+            document.getElementById('adminLoginModal').style.display = 'none';
+            document.getElementById('adminUsername').value = ''; document.getElementById('adminPassword').value = '';
+            showView('admin-view');
+        }
+
+        // ================= نظام الدخول ومعالجة قفل الاشتراك ================= //
+        async function login() {
+            if(!dbClient) return alert("خطأ في الاتصال بقاعدة البيانات.");
+            const fieldName = document.getElementById('loginFieldName').value;
+            const phone = document.getElementById('loginPhone').value;
+            const code = document.getElementById('loginCode').value;
+
+            if(!fieldName || !phone || !code) return alert("يرجى تعبئة جميع الحقول.");
+
+            const { data, error } = await dbClient.from('fields').select('*').eq('name', fieldName).eq('owner_phone', phone).eq('activation_code', code).single();
+            if(error || !data) return alert("البيانات المدخلة غير صحيحة.");
+            
+            if(data.subscription_status === 'inactive') return alert("هذا الحساب معطل من قبل الإدارة.");
+
+            currentField = data;
+
+            // حساب التواريخ لمعرفة ما إذا كان الاشتراك منتهي أو سينتهي
+            const todayDate = new Date(); todayDate.setHours(0,0,0,0);
+            const endDate = new Date(data.subscription_end_date); endDate.setHours(0,0,0,0);
+            
+            const diffTime = endDate - todayDate;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            // تفريغ حقول تسجيل الدخول
+            document.getElementById('loginFieldName').value = ''; document.getElementById('loginPhone').value = ''; document.getElementById('loginCode').value = '';
+
+            // إذا انتهى الاشتراك
+            if(diffDays < 0) {
+                showView('expired-view');
+                return; // إيقاف الدخول للوحة التحكم
+            }
+
+            // إعداد بيانات اللوحة
+            document.getElementById('ownerWelcome').innerText = `أهلاً بك، إدارة ${data.name}`;
+            document.getElementById('subEndDate').innerText = data.subscription_end_date;
+            document.getElementById('fieldMapLink').value = data.google_maps_link || '';
+
+            // نظام التنبيه قبل يوم أو يومين
+            const banner = document.getElementById('renewalWarningBanner');
+            if (diffDays <= 1) {
+                banner.style.display = 'block';
+                if(diffDays === 0) banner.innerText = '⚠️ إشتراكك ينتهي اليوم! اضغط هنا لتجديد الاشتراك فوراً وتجنب توقف النظام.';
+                else banner.innerText = '⚠️ إشتراكك ينتهي غداً! اضغط هنا لتجديد الاشتراك فوراً وتجنب توقف النظام.';
+            } else {
+                banner.style.display = 'none';
+            }
+
+            showView('dashboard-view');
+            switchDashTab('reservations', document.getElementById('tabRes'));
+        }
+
+        // ================= نظام التجديد الآلي السريع ================= //
+        function goToAutoRenewal() {
+            showView('subscription-view');
+            
+            // جعل وضع الاستمارة: تجديد
+            currentMode = 'renewal';
+            document.querySelectorAll('#subscription-view .tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('renewTabBtn').classList.add('active');
+            
+            document.getElementById('formTitle').innerText = "تجديد اشتراك الملاعب";
+            document.getElementById('renewalCodeGroup').style.display = 'block';
+            
+            // تعبئة البيانات تلقائياً وتفعيل الحقول
+            document.getElementById('oldCode').value = currentField.activation_code;
+            verifiedRenewalCode = true;
+            document.getElementById('mainFormFields').style.display = 'block';
+            
+            document.getElementById('fieldName').value = currentField.name;
+            document.getElementById('location').value = currentField.location;
+            document.getElementById('phone').value = currentField.owner_phone;
+            
+            document.getElementById('fieldName').disabled = true;
+            document.getElementById('location').disabled = true;
+            document.getElementById('phone').disabled = true;
+            
+            calculatePrice();
+        }
+
+        function setSubMode(mode, element) {
+            currentMode = mode;
+            document.querySelectorAll('#subscription-view .tab').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+            
+            if(mode === 'renewal') {
+                document.getElementById('formTitle').innerText = "تجديد اشتراك الملاعب";
+                document.getElementById('renewalCodeGroup').style.display = 'block';
+                document.getElementById('mainFormFields').style.display = 'none';
+                verifiedRenewalCode = false;
+            } else {
+                document.getElementById('formTitle').innerText = "طلب اشتراك الملاعب";
+                document.getElementById('renewalCodeGroup').style.display = 'none';
+                document.getElementById('mainFormFields').style.display = 'block';
+                document.getElementById('fieldName').disabled = false; document.getElementById('location').disabled = false; document.getElementById('phone').disabled = false;
+                document.getElementById('fieldName').value = ''; document.getElementById('location').value = ''; document.getElementById('phone').value = '';
+            }
+            calculatePrice();
+        }
+
+        async function verifyOldCode() {
+            if(!dbClient) return;
+            const code = document.getElementById('oldCode').value;
+            if(!code) return alert("الرجاء إدخال الرمز");
+            
+            const { data, error } = await dbClient.from('fields').select('*').eq('activation_code', code).single();
+            if(error || !data) return alert("رمز التفعيل غير صحيح");
+
+            verifiedRenewalCode = true;
+            document.getElementById('mainFormFields').style.display = 'block';
+            document.getElementById('fieldName').value = data.name; document.getElementById('location').value = data.location; document.getElementById('phone').value = data.owner_phone;
+            document.getElementById('fieldName').disabled = true; document.getElementById('location').disabled = true; document.getElementById('phone').disabled = true;
+        }
+
+        function calculatePrice() {
+            const plan = document.getElementById('plan').value;
+            const users = parseInt(document.getElementById('usersCount').value) || 1;
+            let basePrice = (plan === 'monthly') ? 150 : 1500;
+            let usersPrice = 50; if(users > 3) usersPrice = 50 + ((users - 3) * 20); 
+
+            let subtotal = basePrice + usersPrice;
+            if(currentDiscount > 0) subtotal = subtotal - (subtotal * (currentDiscount / 100));
+            finalPrice = Math.round(subtotal);
+            document.getElementById('totalPriceDisplay').innerText = finalPrice + " أوقية جديدة";
+        }
+
+        async function applyPromo() {
+            const code = document.getElementById('promoCode').value.toUpperCase();
+            if(!code) return;
+            const { data, error } = await dbClient.from('discount_codes').select('*').eq('code', code).eq('active', true).single();
+            if(error || !data) return alert("الكود غير صحيح.");
+            const today = new Date().toISOString().split('T')[0];
+            if(data.expire_date < today) return alert("الكود منتهي الصلاحية.");
+            if(data.used_count >= data.usage_limit) return alert("وصل الحد الأقصى للاستخدام.");
+
+            currentDiscount = data.discount_percent;
+            alert(`مبروك! تم تطبيق خصم بقيمة ${currentDiscount}%`);
+            calculatePrice();
+        }
+
+        function showPaymentInstructions() {
+            const bank = document.getElementById('bank').value;
+            const box = document.getElementById('paymentInstructions');
+            const numSpan = document.getElementById('transferNumber');
+            if(!bank) { box.style.display = 'none'; return; }
+            const group1 =['Bankily', 'Sadad', 'Masrvi', 'Click', 'GazaPay', 'Rissidi', 'Amanti', 'Bimbank', 'Mouripost'];
+            if(group1.includes(bank)) numSpan.innerText = "20479962"; else numSpan.innerText = "46154399";
+            box.style.display = 'block';
+        }
+
+        async function submitSubscription() {
+            if(!dbClient) return alert("تأكد من الإنترنت.");
+            const form = document.getElementById('subscriptionForm');
+            if(!form.checkValidity()) { form.reportValidity(); return; }
+            if(currentMode === 'renewal' && !verifiedRenewalCode) return alert("تحقق من الرمز القديم أولاً.");
+
+            const file = document.getElementById('paymentImage').files[0];
+            if(!file) return alert("أرفق الإيصال.");
+            
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true; btn.innerText = "جاري الإرسال...";
+
+            try {
+                const fileName = `${Date.now()}_${file.name}`;
+                const { error: uploadError } = await dbClient.storage.from('payments').upload(fileName, file);
+                if(uploadError) throw uploadError;
+                
+                const { data: imgUrl } = dbClient.storage.from('payments').getPublicUrl(fileName);
+
+                const reqData = {
+                    request_type: currentMode, old_activation_code: currentMode === 'renewal' ? document.getElementById('oldCode').value : null,
+                    field_name: document.getElementById('fieldName').value, location: document.getElementById('location').value, phone: document.getElementById('phone').value,
+                    plan: document.getElementById('plan').value, admins: parseInt(document.getElementById('usersCount').value),
+                    discount_code: document.getElementById('promoCode').value.toUpperCase(), total_price: finalPrice, bank: document.getElementById('bank').value, payment_image: imgUrl.publicUrl
+                };
+
+                const { error: dbError } = await dbClient.from('subscription_requests').insert([reqData]);
+                if(dbError) throw dbError;
+                if(currentDiscount > 0) await dbClient.rpc('increment_discount_usage', { p_code: reqData.discount_code });
+
+                alert("تم إرسال الطلب بنجاح! ستقوم الإدارة بمراجعته."); window.location.reload();
+            } catch (err) {
+                alert("تم رفض الطلب."); btn.disabled = false; btn.innerText = "تأكيد وإرسال الطلب";
+            }
+        }
+
+        // ================= لوحة الملاعب ================= //
+        function switchDashTab(tabId, element) {
+            document.querySelectorAll('#dashboard-view .tabs .tab').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('dash-reservations').style.display = 'none'; document.getElementById('dash-statistics').style.display = 'none'; document.getElementById('dash-settings').style.display = 'none';
+
+            if(tabId === 'reservations') document.getElementById('dash-reservations').style.display = 'block';
+            else if(tabId === 'statistics') { document.getElementById('dash-statistics').style.display = 'block'; renderStatistics(); }
+            else if(tabId === 'settings') document.getElementById('dash-settings').style.display = 'block';
+        }
+
+        async function saveFieldSettings() {
+            const mapLink = document.getElementById('fieldMapLink').value;
+            const { error } = await dbClient.from('fields').update({ google_maps_link: mapLink }).eq('id', currentField.id);
+            if(error) alert("حدث خطأ."); else { currentField.google_maps_link = mapLink; alert("تم حفظ رابط خرائط جوجل!"); }
+        }
+
+        async function loadReservations() {
+            if(!dbClient || !currentField) return;
+            const { data, error } = await dbClient.from('reservations').select('*').eq('field_id', currentField.id).order('date', { ascending: true }).order('time', { ascending: true });
+            if(error) return;
+            allReservations = data; 
+            const tbody = document.getElementById('reservationsTable'); tbody.innerHTML = '';
+            if(data.length === 0) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">لا توجد حجوزات.</td></tr>`; return; }
+            data.forEach(res => {
+                const btnWhatsApp = `<button type="button" class="btn btn-success" style="padding: 6px 12px; font-size:12px; margin-left:5px;" onclick='sendWhatsApp(${JSON.stringify(res)})'>📱 واتساب</button>`;
+                const btnDelete = `<button type="button" class="btn btn-outline" style="padding: 6px 12px; font-size:12px; color:var(--danger); border-color:var(--danger);" onclick="deleteReservation('${res.id}')">حذف</button>`;
+                tbody.innerHTML += `<tr><td><strong>${res.date}</strong></td><td style="color:var(--primary); font-weight:bold;">${res.time}</td><td>${res.team_name}</td><td dir="ltr">${res.phone}</td><td>${res.duration} س</td><td>${res.price}</td><td style="display:flex; justify-content:center; gap:5px;">${btnWhatsApp} ${btnDelete}</td></tr>`;
+            });
+        }
+
+        function openResModal() { document.getElementById('resModal').style.display = 'flex'; }
+        async function saveReservation() {
+            const data = { field_id: currentField.id, date: document.getElementById('resDate').value, time: document.getElementById('resTime').value, team_name: document.getElementById('resTeam').value, phone: document.getElementById('resPhone').value, duration: document.getElementById('resDuration').value, price: document.getElementById('resPrice').value };
+            if(!data.date || !data.time || !data.team_name || !data.phone) return alert("تأكد من إدخال البيانات.");
+
+            const { error } = await dbClient.from('reservations').insert([data]);
+            if(error) { if(error.code === '23505') alert("محجوز مسبقاً!"); else alert("خطأ!"); return; }
+
+            document.getElementById('resModal').style.display = 'none'; document.getElementById('resTeam').value = ''; document.getElementById('resPhone').value = '';
+            if(confirm('تم الحفظ! هل تريد إرسال تفاصيل الحجز عبر واتساب للفريق الآن؟')) sendWhatsApp(data);
+            loadReservations();
+        }
+
+        async function deleteReservation(id) { if(confirm('متأكد؟')) { await dbClient.from('reservations').delete().eq('id', id); loadReservations(); } }
+
+        function sendWhatsApp(res) {
+            const mapLink = currentField.google_maps_link ? `📍 موقع الملعب:\n${currentField.google_maps_link}` : ``;
+            const message = `مرحباً بك في *${currentField.name}* ⚽\nتم تأكيد حجزكم بنجاح ✅\n\n👤 باسم: ${res.team_name}\n📅 التاريخ: ${res.date}\n⏰ الوقت: ${res.time}\n⏳ المدة: ${res.duration} ساعة\n💰 السعر: ${res.price} أوقية\n\n${mapLink}\n\nنتمنى لكم وقتاً ممتعاً!`;
+            window.open(`https://wa.me/${res.phone}?text=${encodeURIComponent(message)}`, '_blank');
+        }
+
+        function renderStatistics() {
+            if(!allReservations || allReservations.length === 0) {
+                document.getElementById('statTotalRes').innerText = '0'; document.getElementById('statTotalRev').innerText = '0'; document.getElementById('statBestDay').innerText = '-'; document.getElementById('statBestHour').innerText = '-'; return;
+            }
+            let totalRev = 0; const daysCount = {}; const hoursCount = {}; const daysNames =['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+            allReservations.forEach(res => {
+                totalRev += Number(res.price) || 0;
+                const hour = res.time.substring(0, 5); hoursCount[hour] = (hoursCount[hour] || 0) + 1;
+                const d = new Date(res.date); const dayName = daysNames[d.getDay()]; if(dayName) daysCount[dayName] = (daysCount[dayName] || 0) + 1;
+            });
+            let bestDay = '-'; let maxDay = 0; for(const day in daysCount) { if(daysCount[day] > maxDay) { maxDay = daysCount[day]; bestDay = day; } }
+            let bestHour = '-'; let maxHour = 0; for(const hr in hoursCount) { if(hoursCount[hr] > maxHour) { maxHour = hoursCount[hr]; bestHour = hr; } }
+
+            document.getElementById('statTotalRes').innerText = allReservations.length; document.getElementById('statTotalRev').innerText = totalRev.toLocaleString(); document.getElementById('statBestDay').innerText = bestDay; document.getElementById('statBestHour').innerText = bestHour;
+        }
+
+        // ================= الإدارة (المشرف) ================= //
+        function switchAdminTab(tab, element) {
+            document.querySelectorAll('#admin-view .tab').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+            
+            document.getElementById('adminRequestsView').style.display = 'none';
+            document.getElementById('adminFieldsView').style.display = 'none';
+            document.getElementById('adminPromosView').style.display = 'none';
+
+            if(tab === 'requests') { document.getElementById('adminRequestsView').style.display = 'block'; loadAdminRequests(); } 
+            else if(tab === 'fields') { document.getElementById('adminFieldsView').style.display = 'block'; loadAdminFields(); }
+            else if(tab === 'promos') { document.getElementById('adminPromosView').style.display = 'block'; loadPromos(); }
+        }
+
+        async function loadAdminRequests() {
+            if(!dbClient) return;
+            const { data, error } = await dbClient.from('subscription_requests').select('*').eq('status', 'pending');
+            if(error) return;
+            globalAdminRequests = data; 
+            const tbody = document.getElementById('requestsTable'); tbody.innerHTML = '';
+            if(data.length === 0) { tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">لا توجد طلبات معلقة.</td></tr>`; return; }
+            data.forEach(req => {
+                const typeText = req.request_type === 'renewal' ? '<span class="badge badge-active">تجديد</span>' : '<span class="badge badge-pending">جديد</span>';
+                tbody.innerHTML += `<tr><td>${typeText}</td><td><strong>${req.field_name}</strong></td><td>${req.location}</td><td dir="ltr">${req.phone}</td><td>${req.plan === 'monthly' ? 'شهري' : 'سنوي'}</td><td style="color:var(--primary); font-weight:bold;">${req.total_price}</td><td>${req.bank}</td><td><a href="${req.payment_image}" target="_blank" style="color:#2563eb; font-weight:bold;">الرابط</a></td><td class="action-btns"><button type="button" class="btn" style="padding:6px 10px; font-size:12px;" onclick="acceptRequest('${req.id}')">موافقة</button><button type="button" class="btn btn-danger" style="padding:6px 10px; font-size:12px;" onclick="rejectRequest('${req.id}')">رفض</button></td></tr>`;
+            });
+        }
+
+        async function acceptRequest(reqId) {
+            const req = globalAdminRequests.find(r => r.id === reqId);
+            if(!req || !confirm("هل تأكدت من وصول الدفعة المالية للموافقة على الطلب؟")) return;
+
+            let activationCode = req.old_activation_code;
+            const end = new Date();
+            if(req.plan === 'monthly') end.setMonth(end.getMonth() + 1); else end.setFullYear(end.getFullYear() + 1);
+            const endDateStr = end.toISOString().split('T')[0];
+
+            if(req.request_type === 'new') {
+                activationCode = generateComplexCode(8); 
+                const { error: fErr } = await dbClient.from('fields').insert([{ name: req.field_name, location: req.location, owner_phone: req.phone, activation_code: activationCode, subscription_end_date: endDateStr }]);
+                if(fErr) return alert("خطأ! يبدو أن رقم الهاتف مسجل مسبقاً.");
+            } else { await dbClient.from('fields').update({ subscription_end_date: endDateStr }).eq('activation_code', activationCode); }
+
+            await dbClient.from('subscription_requests').update({ status: 'accepted' }).eq('id', req.id);
+            loadAdminRequests();
+            const msg = `أهلاً بك في FieldBook 🎉\nتم تأكيد دفعكم وتفعيل اشتراك ملعب (${req.field_name}) بنجاح.\n\nرمز التفعيل السري الخاص بكم هو: *${activationCode}*\nالاشتراك صالح حتى: ${endDateStr}`;
+            window.open(`https://wa.me/${req.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        async function rejectRequest(id) { if(confirm('هل أنت متأكد من رفض الطلب؟')) { await dbClient.from('subscription_requests').update({ status: 'rejected' }).eq('id', id); loadAdminRequests(); } }
+
+        async function loadAdminFields() {
+            if(!dbClient) return;
+            const { data, error } = await dbClient.from('fields').select('*').order('created_at', { ascending: false });
+            if(error) return;
+            const tbody = document.getElementById('adminFieldsTable'); tbody.innerHTML = '';
+            if(data.length === 0) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لا توجد ملاعب مسجلة حتى الآن.</td></tr>`; return; }
+            
+            data.forEach(f => {
+                const statusBadge = f.subscription_status === 'active' ? '<span class="badge badge-active">فعال</span>' : '<span class="badge badge-inactive">معطل</span>';
+                const copyBtn = `<button class="btn btn-outline" style="padding:4px 8px; font-size:11px;" onclick="copyCode('${f.activation_code}')">نسخ الرمز</button>`;
+                const renewBtn = `<button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openRenewModal('${f.id}', '${f.subscription_end_date}')">تجديد</button>`;
+                const toggleBtn = `<button class="btn ${f.subscription_status === 'active' ? 'btn-warning' : 'btn-success'}" style="padding:4px 8px; font-size:11px;" onclick="toggleFieldStatus('${f.id}', '${f.subscription_status}')">${f.subscription_status === 'active' ? 'تعطيل' : 'تفعيل'}</button>`;
+                const deleteBtn = `<button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteField('${f.id}')">حذف</button>`;
+
+                tbody.innerHTML += `<tr><td><strong>${f.name}</strong></td><td dir="ltr">${f.owner_phone}</td><td style="color:var(--danger); font-weight:bold;">${f.subscription_end_date}</td><td>${statusBadge}</td><td style="font-family: monospace; letter-spacing:1px; font-weight:bold;">${f.activation_code} <br> ${copyBtn}</td><td class="action-btns">${renewBtn} ${toggleBtn} ${deleteBtn}</td></tr>`;
+            });
+        }
+
+        async function toggleFieldStatus(id, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+            const msg = newStatus === 'active' ? 'تفعيل' : 'تعطيل';
+            if(confirm(`هل أنت متأكد من ${msg} هذا الحساب؟`)) {
+                await dbClient.from('fields').update({ subscription_status: newStatus }).eq('id', id);
+                loadAdminFields();
+            }
+        }
+
+        async function deleteField(id) {
+            if(confirm("تحذير: سيتم حذف الملعب وجميع حجوزاته نهائياً! هل أنت متأكد؟")) {
+                await dbClient.from('fields').delete().eq('id', id);
+                loadAdminFields();
+            }
+        }
+
+        function openRenewModal(id, endDate) {
+            currentRenewFieldId = id; currentRenewFieldEndDate = endDate;
+            document.getElementById('renewFieldModal').style.display = 'flex';
+        }
+
+        async function confirmRenewField() {
+            const plan = document.getElementById('renewPlanOption').value;
+            let d = new Date(currentRenewFieldEndDate);
+            const today = new Date(); if(d < today) d = today; 
+            if(plan === 'monthly') d.setMonth(d.getMonth() + 1); else d.setFullYear(d.getFullYear() + 1);
+            const newEndStr = d.toISOString().split('T')[0];
+
+            await dbClient.from('fields').update({ subscription_end_date: newEndStr }).eq('id', currentRenewFieldId);
+            alert("تم التجديد بنجاح! الصلاحية الجديدة: " + newEndStr);
+            document.getElementById('renewFieldModal').style.display = 'none'; loadAdminFields();
+        }
+
+        async function saveManualField() {
+            const name = document.getElementById('manFieldName').value;
+            const phone = document.getElementById('manFieldPhone').value;
+            const plan = document.getElementById('manFieldPlan').value;
+            const startDate = document.getElementById('manFieldStartDate').value;
+
+            if(!name || !phone || !startDate) return alert("الرجاء تعبئة اسم الملعب، الهاتف، وتاريخ البدء.");
+
+            const start = new Date(startDate);
+            if(plan === 'monthly') start.setMonth(start.getMonth() + 1); else start.setFullYear(start.getFullYear() + 1);
+            const endDateStr = start.toISOString().split('T')[0];
+
+            const activationCode = generateComplexCode(8); 
+
+            const { error } = await dbClient.from('fields').insert([{ name: name, location: 'غير محدد', owner_phone: phone, activation_code: activationCode, subscription_end_date: endDateStr }]);
+            if(error) return alert("خطأ! يبدو أن رقم الهاتف مسجل مسبقاً لأحد الملاعب.");
+
+            alert("تم إضافة الملعب بنجاح!\n\nرمز التفعيل هو: " + activationCode + "\n\n(تم نسخ الرمز للحافظة تلقائياً)");
+            copyCode(activationCode);
+            
+            document.getElementById('addManualFieldModal').style.display = 'none';
+            document.getElementById('manFieldName').value = ''; document.getElementById('manFieldPhone').value = ''; document.getElementById('manFieldStartDate').value = '';
+            loadAdminFields();
+        }
+
+        async function loadPromos() {
+            if(!dbClient) return;
+            const { data } = await dbClient.from('discount_codes').select('*');
+            const tbody = document.getElementById('promosTable'); tbody.innerHTML = '';
+            if(data) {
+                data.forEach(p => {
+                    tbody.innerHTML += `<tr><td style="font-weight:bold; color:var(--primary);">${p.code}</td><td>${p.discount_percent}%</td><td>${p.usage_limit}</td><td>${p.used_count}</td><td>${p.expire_date}</td><td>${p.active ? '<span class="badge badge-active">فعال</span>' : '<span class="badge badge-inactive">معطل</span>'}</td><td class="action-btns"><button type="button" class="btn btn-outline" style="padding:4px 8px; font-size:12px;" onclick="togglePromo('${p.id}', ${p.active})">${p.active ? 'إيقاف' : 'تشغيل'}</button><button type="button" class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deletePromo('${p.id}')">حذف</button></td></tr>`;
+                });
+            }
+        }
+        async function savePromo() {
+            const codeTxt = document.getElementById('pCode').value.toUpperCase();
+            const data = { code: codeTxt, discount_percent: document.getElementById('pPercent').value, usage_limit: document.getElementById('pLimit').value, expire_date: document.getElementById('pExpire').value };
+            if(!data.code || !data.discount_percent || !data.expire_date) return alert("الرجاء تعبئة البيانات.");
+            await dbClient.from('discount_codes').insert([data]);
+            document.getElementById('promoModal').style.display = 'none'; loadPromos();
+        }
+        async function deletePromo(id) { if(confirm('متأكد من الحذف؟')) { await dbClient.from('discount_codes').delete().eq('id', id); loadPromos(); } }
+        async function togglePromo(id, currentState) { await dbClient.from('discount_codes').update({ active: !currentState }).eq('id', id); loadPromos(); }
+    </script>
+</body>
+</html>
