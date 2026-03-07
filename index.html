@@ -146,7 +146,11 @@
             <div id="mainFormFields">
                 <div class="form-group"><label data-i18n="fieldName">اسم الملعب</label><input type="text" id="fieldName" required></div>
                 <div class="form-group"><label data-i18n="fieldLoc">الموقع / المكان</label><input type="text" id="location" required></div>
-                <div class="form-group"><label data-i18n="phoneNum">رقم الواتساب</label><input type="number" id="phone" required></div>
+                <div class="form-group">
+                    <label data-i18n="phoneNum">رقم الهاتف (الواتساب)</label>
+                    <input type="text" id="phone" required dir="ltr">
+                    <small style="color: var(--danger); font-weight: bold; display: block; margin-top: 5px;" data-i18n="whatsappNote">⚠️ هام: يجب أن يكون الرقم متصلاً بالواتساب لتلقي رمز التفعيل.</small>
+                </div>
                 <div style="display: flex; gap: 15px;">
                     <div class="form-group" style="flex: 1;"><label data-i18n="subType">نوع الاشتراك</label><select id="plan" onchange="calculatePrice()"><option value="monthly" data-i18n="optMonthly">شهري</option><option value="yearly" data-i18n="optYearly">سنوي</option></select></div>
                     <div class="form-group" style="flex: 1;"><label data-i18n="subUsers">عدد المستخدمين</label><input type="number" id="usersCount" min="1" value="1" oninput="calculatePrice()" required></div>
@@ -172,6 +176,7 @@
             <div class="tab" id="tabStats" onclick="switchDashTab('statistics', this)" data-i18n="tabStats">📊 الإحصائيات</div>
             <div class="tab" id="tabSettings" onclick="switchDashTab('settings', this)" data-i18n="tabSet">⚙️ الإعدادات</div>
         </div>
+        
         <div id="dash-reservations">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="color: var(--text-main);" data-i18n="resTableTitle">جدول الحجوزات</h3>
@@ -184,6 +189,7 @@
                 </table>
             </div>
         </div>
+        
         <div id="dash-statistics" style="display: none;">
             <div class="stats-grid">
                 <div class="stat-card"><h3 data-i18n="stTotalRes">الحجوزات</h3><h1 id="statTotalRes" style="color:var(--primary);">0</h1></div>
@@ -192,6 +198,7 @@
                 <div class="stat-card"><h3 data-i18n="stBestHour">أفضل ساعة</h3><h1 id="statBestHour">-</h1></div>
             </div>
         </div>
+        
         <div id="dash-settings" style="display: none;">
             <div class="form-group"><label data-i18n="setMap">رابط خرائط جوجل (Google Maps)</label><input type="url" id="fieldMapLink"></div>
             <button type="button" class="btn" onclick="saveFieldSettings()" data-i18n="btnSave">حفظ الإعدادات</button>
@@ -209,9 +216,20 @@
         <div id="adminPromosView" style="display:none;"><button class="btn mb-4" onclick="document.getElementById('promoModal').style.display='flex'">+ إصدار كود خصم</button><div style="overflow-x:auto;"><table><thead><tr><th>الكود</th><th>الخصم %</th><th>الحد</th><th>المستخدم</th><th>الانتهاء</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="promosTable"></tbody></table></div></div>
     </div>
 
-    <!-- النوافذ المنبثقة -->
-    <div class="modal-overlay" id="adminLoginModal"><div class="modal text-center"><h3 style="color: var(--primary-dark); margin-bottom: 20px;">دخول آمن</h3><input type="text" id="adminUsername" placeholder="User" style="margin-bottom: 15px;"><input type="password" id="adminPassword" placeholder="Pass" style="margin-bottom: 25px;"><div style="display:flex; gap:10px;"><button class="btn" style="flex:2;" onclick="adminLogin()">دخول</button><button class="btn btn-danger" style="flex:1;" onclick="document.getElementById('adminLoginModal').style.display='none'">إلغاء</button></div></div></div>
+    <!-- النوافذ المنبثقة (Modals) -->
+    
+    <!-- نافذة نجاح الاشتراك -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal text-center">
+            <h1 style="font-size: 50px; margin-bottom: 10px;">✅</h1>
+            <h3 style="color: var(--primary); margin-bottom: 15px;" data-i18n="successTitle">تم إرسال الطلب بنجاح!</h3>
+            <p style="color: var(--text-main); margin-bottom: 25px; line-height: 1.6;" data-i18n="successMsg">سيتم مراجعة طلبك والتحقق من الدفع من قبل الإدارة.<br>سنتواصل معك عبر <b>الواتساب</b> في أقرب وقت لتزويدك برمز التفعيل.</p>
+            <button class="btn" style="width: 100%;" onclick="window.location.reload()" data-i18n="btnOk">حسناً، فهمت</button>
+        </div>
+    </div>
 
+    <div class="modal-overlay" id="adminLoginModal"><div class="modal text-center"><h3 style="color: var(--primary-dark); margin-bottom: 20px;">دخول آمن</h3><input type="text" id="adminUsername" placeholder="User" style="margin-bottom: 15px;"><input type="password" id="adminPassword" placeholder="Pass" style="margin-bottom: 25px;"><div style="display:flex; gap:10px;"><button class="btn" style="flex:2;" onclick="adminLogin()">دخول</button><button class="btn btn-danger" style="flex:1;" onclick="document.getElementById('adminLoginModal').style.display='none'">إلغاء</button></div></div></div>
+    
     <div class="modal-overlay" id="resModal">
         <div class="modal">
             <h3 style="margin-bottom: 15px; color: var(--primary);" data-i18n="modalResTitle">تسجيل حجز جديد</h3>
@@ -237,7 +255,6 @@
     <div class="modal-overlay" id="addManualFieldModal"><div class="modal"><h3 style="margin-bottom: 15px; color: var(--primary);">إضافة ملعب</h3><input type="text" id="manFieldName" placeholder="الاسم" style="margin-bottom:10px;width:100%;padding:10px;"><input type="number" id="manFieldPhone" placeholder="الهاتف" style="margin-bottom:10px;width:100%;padding:10px;"><div style="display:flex;gap:10px;"><select id="manFieldPlan" style="margin-bottom:10px;flex:1;padding:10px;"><option value="monthly">شهري</option><option value="yearly">سنوي</option></select><input type="number" id="manFieldUsers" placeholder="عدد المستخدمين" value="1" min="1" style="margin-bottom:10px;flex:1;padding:10px;"></div><input type="date" id="manFieldStartDate" style="margin-bottom:15px;width:100%;padding:10px;"><div style="display:flex;gap:10px;"><button class="btn" style="flex:2;" onclick="saveManualField()">حفظ وتوليد الرمز</button><button class="btn btn-outline" style="flex:1" onclick="document.getElementById('addManualFieldModal').style.display='none'">إلغاء</button></div></div></div>
     <div class="modal-overlay" id="renewFieldModal"><div class="modal"><h3 style="margin-bottom: 15px; color: var(--primary);">تجديد الملعب</h3><select id="renewPlanOption" style="margin-bottom:15px;width:100%;padding:10px;"><option value="monthly">شهر إضافي</option><option value="yearly">سنة كاملة</option></select><div style="display:flex;gap:10px;"><button class="btn" style="flex:2;" onclick="confirmRenewField()">تأكيد</button><button class="btn btn-outline" style="flex:1" onclick="document.getElementById('renewFieldModal').style.display='none'">إلغاء</button></div></div></div>
 
-    <!-- ================= سكريبت النظام ================= -->
     <script>
         // --- 1. تهيئة معرّف الجهاز ---
         let deviceId = localStorage.getItem('stadepro_device_id');
@@ -248,15 +265,15 @@
         let deferredPrompt; window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('installAppBtn').style.display = 'inline-block'; });
         function installPWA() { if(deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then((c) => { if(c.outcome === 'accepted') document.getElementById('installAppBtn').style.display = 'none'; deferredPrompt = null; }); } }
 
-        // --- 3. نظام الترجمة (محفوظ محلياً) --- 
+        // --- 3. نظام الترجمة المزدوج --- 
         const dict = {
-            ar: { loading: "⏳ جاري التحميل...", installApp: "📱 تثبيت التطبيق", loginTitle: "تسجيل الدخول", loginSub: "أدخل بيانات ملعبك للوصول للوحة الحجوزات", fieldName: "اسم الملعب", fieldNamePh: "أدخل اسم الملعب", phoneNum: "رقم الهاتف", phoneNumPh: "أدخل رقم الهاتف", actCode: "رمز التفعيل", actCodePh: "أدخل الرمز السري", btnLogin: "دخول إلى لوحة التحكم", noSub: "ليس لديك اشتراك معنا؟", reqSub: "طلب اشتراك ملعب جديد", expTitle: "انتهى اشتراكك، عليك تجديده!", expDesc: "لقد انتهت فترة اشتراكك وتم قفل اللوحة. يرجى التجديد الآن.", btnRenewNow: "تجديد الاشتراك الآن", btnBackLogin: "عودة للدخول", formTitleNew: "طلب اشتراك الملاعب", tabNew: "اشتراك جديد", tabRenew: "تجديد اشتراك", oldCode: "رمز التفعيل القديم", btnVerify: "تحقق", fieldLoc: "الموقع / المكان", subType: "نوع الاشتراك", optMonthly: "شهري", optYearly: "سنوي", subUsers: "عدد المستخدمين", promoCode: "كود التخفيض (اختياري)", btnApply: "تطبيق", totalPrice: "المبلغ الإجمالي المطلوب دفعه", payMethod: "وسيلة الدفع المفضلة", payInst: "تعليمات الدفع", payDesc: "الرجاء تحويل المبلغ إلى هذا الرقم:", payImg: "صورة إثبات الدفع (الإيصال)", btnSubmit: "تأكيد وإرسال الطلب", warnExpire: "⚠️ اشتراكك ينتهي قريباً! اضغط هنا للتجديد فوراً.", subEndText: "تاريخ الانتهاء:", btnLogout: "تسجيل الخروج", tabRes: "📅 الحجوزات", tabStats: "📊 الإحصائيات", tabSet: "⚙️ الإعدادات", resTableTitle: "جدول الحجوزات", btnAddRes: "+ إضافة حجز", thDate: "التاريخ", thTime: "الوقت", thTeam: "الفريق", thPhone: "الهاتف", thDur: "المدة", thPrice: "السعر", thAction: "إجراءات", stTotalRes: "الحجوزات", stTotalRev: "الدخل", stBestDay: "أفضل يوم", stBestHour: "أفضل ساعة", setMap: "رابط خرائط جوجل", btnSave: "حفظ", modalResTitle: "تسجيل حجز جديد", resType: "نوع الحجز", resSingle: "يوم واحد", resRecurring: "حجز متكرر", resPattern: "نمط التكرار", patDaily: "يومياً", patSkip1: "يوم بعد يوم", patSkip2: "يومين راحة", patWeekly: "أسبوعياً", resEnd: "تاريخ الانتهاء", btnConfirm: "حفظ وتأكيد", btnCancel: "إلغاء", btnDel: "حذف", btnWa: "📱 واتساب" },
-            fr: { loading: "⏳ Chargement...", installApp: "📱 Installer App", loginTitle: "Connexion", loginSub: "Entrez les détails de votre terrain", fieldName: "Nom du terrain", fieldNamePh: "Entrez le nom", phoneNum: "Numéro de téléphone", phoneNumPh: "Entrez le numéro", actCode: "Code d'activation", actCodePh: "Entrez le code", btnLogin: "Accéder au tableau", noSub: "Vous n'avez pas d'abonnement ?", reqSub: "Demander un abonnement", expTitle: "Abonnement expiré !", expDesc: "Votre abonnement a expiré. Veuillez le renouveler pour continuer.", btnRenewNow: "Renouveler maintenant", btnBackLogin: "Retour", formTitleNew: "Demande d'abonnement", tabNew: "Nouvel Abo", tabRenew: "Renouvellement", oldCode: "Ancien code", btnVerify: "Vérifier", fieldLoc: "Lieu / Emplacement", subType: "Type d'abonnement", optMonthly: "Mensuel", optYearly: "Annuel", subUsers: "Nombre d'utilisateurs", promoCode: "Code promo", btnApply: "Appliquer", totalPrice: "Montant total à payer", payMethod: "Méthode de paiement", payInst: "Instructions de paiement", payDesc: "Veuillez transférer le montant à ce numéro:", payImg: "Reçu de paiement", btnSubmit: "Confirmer et Envoyer", warnExpire: "⚠️ Votre abonnement expire bientôt ! Cliquez pour renouveler.", subEndText: "Date d'expiration:", btnLogout: "Déconnexion", tabRes: "📅 Réservations", tabStats: "📊 Statistiques", tabSet: "⚙️ Paramètres", resTableTitle: "Liste des réservations", btnAddRes: "+ Réservation", thDate: "Date", thTime: "Heure", thTeam: "Équipe", thPhone: "Téléphone", thDur: "Durée", thPrice: "Prix", thAction: "Actions", stTotalRes: "Réservations", stTotalRev: "Revenus", stBestDay: "Meilleur jour", stBestHour: "Heure de pointe", setMap: "Lien Google Maps", btnSave: "Enregistrer", modalResTitle: "Nouvelle réservation", resType: "Type", resSingle: "Un seul jour", resRecurring: "Récurrent", resPattern: "Modèle", patDaily: "Quotidien", patSkip1: "1 jour sur 2", patSkip2: "1 jour sur 3", patWeekly: "Hebdomadaire", resEnd: "Date de fin", btnConfirm: "Confirmer", btnCancel: "Annuler", btnDel: "Supprimer", btnWa: "📱 WhatsApp" }
+            ar: { loading: "⏳ جاري التحميل...", installApp: "📱 تثبيت التطبيق", loginTitle: "تسجيل الدخول", loginSub: "أدخل بيانات ملعبك للوصول للوحة الحجوزات", fieldName: "اسم الملعب", fieldNamePh: "أدخل اسم الملعب", phoneNum: "رقم الهاتف (الواتساب)", phoneNumPh: "أدخل رقم الهاتف", whatsappNote: "⚠️ هام: يجب أن يكون الرقم متصلاً بالواتساب لتلقي رمز التفعيل.", successTitle: "تم إرسال الطلب بنجاح! ✅", successMsg: "سيتم مراجعة طلبك والتحقق من الدفع من قبل الإدارة.<br>سنتواصل معك عبر <b>الواتساب</b> في أقرب وقت لتزويدك برمز التفعيل.", btnOk: "حسناً، فهمت", actCode: "رمز التفعيل", actCodePh: "أدخل الرمز السري", btnLogin: "دخول إلى لوحة التحكم", noSub: "ليس لديك اشتراك معنا؟", reqSub: "طلب اشتراك ملعب جديد", expTitle: "انتهى اشتراكك، عليك تجديده!", expDesc: "لقد انتهت فترة اشتراكك وتم قفل اللوحة. يرجى التجديد الآن.", btnRenewNow: "تجديد الاشتراك الآن", btnBackLogin: "عودة للدخول", formTitleNew: "طلب اشتراك الملاعب", tabNew: "اشتراك جديد", tabRenew: "تجديد اشتراك", oldCode: "رمز التفعيل القديم", btnVerify: "تحقق", fieldLoc: "الموقع / المكان", subType: "نوع الاشتراك", optMonthly: "شهري", optYearly: "سنوي", subUsers: "عدد المستخدمين", promoCode: "كود التخفيض (اختياري)", btnApply: "تطبيق", totalPrice: "المبلغ الإجمالي المطلوب دفعه", payMethod: "وسيلة الدفع المفضلة", payInst: "تعليمات الدفع", payDesc: "الرجاء تحويل المبلغ إلى هذا الرقم:", payImg: "صورة إثبات الدفع (الإيصال)", btnSubmit: "تأكيد وإرسال الطلب", warnExpire: "⚠️ اشتراكك ينتهي قريباً! اضغط هنا للتجديد فوراً.", subEndText: "تاريخ الانتهاء:", btnLogout: "تسجيل الخروج", tabRes: "📅 الحجوزات", tabStats: "📊 الإحصائيات", tabSet: "⚙️ الإعدادات", resTableTitle: "جدول الحجوزات", btnAddRes: "+ إضافة حجز", thDate: "التاريخ", thTime: "الوقت", thTeam: "الفريق", thPhone: "الهاتف", thDur: "المدة", thPrice: "السعر", thAction: "إجراءات", stTotalRes: "الحجوزات", stTotalRev: "الدخل", stBestDay: "أفضل يوم", stBestHour: "أفضل ساعة", setMap: "رابط خرائط جوجل", btnSave: "حفظ", modalResTitle: "تسجيل حجز جديد", resType: "نوع الحجز", resSingle: "يوم واحد", resRecurring: "حجز متكرر", resPattern: "نمط التكرار", patDaily: "يومياً", patSkip1: "يوم بعد يوم", patSkip2: "يومين راحة", patWeekly: "أسبوعياً", resEnd: "تاريخ الانتهاء", btnConfirm: "حفظ وتأكيد", btnCancel: "إلغاء", btnDel: "حذف", btnWa: "📱 واتساب" },
+            fr: { loading: "⏳ Chargement...", installApp: "📱 Installer App", loginTitle: "Connexion", loginSub: "Entrez les détails de votre terrain", fieldName: "Nom du terrain", fieldNamePh: "Entrez le nom", phoneNum: "Numéro WhatsApp", phoneNumPh: "Entrez le numéro", whatsappNote: "⚠️ Important: Le numéro doit être lié à WhatsApp pour recevoir le code.", successTitle: "Demande envoyée ! ✅", successMsg: "Votre demande et paiement seront vérifiés.<br>Nous vous contacterons via <b>WhatsApp</b> sous peu avec votre code d'activation.", btnOk: "D'accord, j'ai compris", actCode: "Code d'activation", actCodePh: "Entrez le code", btnLogin: "Accéder au tableau", noSub: "Vous n'avez pas d'abonnement ?", reqSub: "Demander un abonnement", expTitle: "Abonnement expiré !", expDesc: "Votre abonnement a expiré. Veuillez le renouveler pour continuer.", btnRenewNow: "Renouveler maintenant", btnBackLogin: "Retour", formTitleNew: "Demande d'abonnement", tabNew: "Nouvel Abo", tabRenew: "Renouvellement", oldCode: "Ancien code", btnVerify: "Vérifier", fieldLoc: "Lieu / Emplacement", subType: "Type d'abonnement", optMonthly: "Mensuel", optYearly: "Annuel", subUsers: "Nombre d'utilisateurs", promoCode: "Code promo", btnApply: "Appliquer", totalPrice: "Montant total à payer", payMethod: "Méthode de paiement", payInst: "Instructions de paiement", payDesc: "Veuillez transférer le montant à ce numéro:", payImg: "Reçu de paiement", btnSubmit: "Confirmer et Envoyer", warnExpire: "⚠️ Votre abonnement expire bientôt ! Cliquez pour renouveler.", subEndText: "Date d'expiration:", btnLogout: "Déconnexion", tabRes: "📅 Réservations", tabStats: "📊 Statistiques", tabSet: "⚙️ Paramètres", resTableTitle: "Liste des réservations", btnAddRes: "+ Réservation", thDate: "Date", thTime: "Heure", thTeam: "Équipe", thPhone: "Téléphone", thDur: "Durée", thPrice: "Prix", thAction: "Actions", stTotalRes: "Réservations", stTotalRev: "Revenus", stBestDay: "Meilleur jour", stBestHour: "Heure de pointe", setMap: "Lien Google Maps", btnSave: "Enregistrer", modalResTitle: "Nouvelle réservation", resType: "Type", resSingle: "Un seul jour", resRecurring: "Récurrent", resPattern: "Modèle", patDaily: "Quotidien", patSkip1: "1 jour sur 2", patSkip2: "1 jour sur 3", patWeekly: "Hebdomadaire", resEnd: "Date de fin", btnConfirm: "Confirmer", btnCancel: "Annuler", btnDel: "Supprimer", btnWa: "📱 WhatsApp" }
         };
         let currentLang = localStorage.getItem('stadepro_lang') || 'ar';
         function applyLanguage() {
             document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr'; document.documentElement.lang = currentLang; document.getElementById('langToggleBtn').innerText = currentLang === 'ar' ? 'FR' : 'AR';
-            document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(dict[currentLang][key]) el.innerText = dict[currentLang][key]; });
+            document.querySelectorAll('[data-i18n]').forEach(el => { const key = el.getAttribute('data-i18n'); if(dict[currentLang][key]) el.innerHTML = dict[currentLang][key]; });
             document.querySelectorAll('[data-i18n-ph]').forEach(el => { const key = el.getAttribute('data-i18n-ph'); if(dict[currentLang][key]) el.placeholder = dict[currentLang][key]; });
         }
         function toggleLang() { currentLang = currentLang === 'ar' ? 'fr' : 'ar'; localStorage.setItem('stadepro_lang', currentLang); applyLanguage(); if(currentField) { renderReservationsTable(); renderStatistics(); } }
@@ -266,23 +283,19 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphZGp3Y2NxbHRpcGV5aGVsanZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjczMTQxMiwiZXhwIjoyMDg4MzA3NDEyfQ.usWa2csuVNdtLn4wRLZXg2xpQandkbRG-pnB-0vT0ng';
         let dbClient = null; try { if (window.supabase) dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch (e) {}
 
-        let currentMode = 'new', currentDiscount = 0, finalPrice = 200, verifiedRenewalCode = false;
-        let currentField = null, allReservations =[], globalAdminRequests =[], currentRenewFieldId = null, currentRenewFieldEndDate = null;
+        let currentMode = 'new'; let currentDiscount = 0; let finalPrice = 200; let verifiedRenewalCode = false;
+        let currentField = null; let allReservations =[]; let globalAdminRequests =[]; let currentRenewFieldId = null; let currentRenewFieldEndDate = null;
         
         function fallbackCopy(text) { let ta = document.createElement("textarea"); ta.value = text; ta.style.position="fixed"; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); alert('Copied: ' + text); } catch(e){} document.body.removeChild(ta); }
         function copyCode(c) { if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(c).then(()=>alert('Copied: '+c)).catch(()=>fallbackCopy(c)); else fallbackCopy(c); }
         function generateComplexCode(len=8) { const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$*&"; let code=""; for(let i=0;i<len;i++) code+=chars.charAt(Math.floor(Math.random()*chars.length)); return code; }
         function showView(viewId) { document.querySelectorAll('.view').forEach(el => el.classList.remove('active')); document.getElementById(viewId).classList.add('active'); window.scrollTo(0,0); }
 
-        // --- 5. نظام الدخول التلقائي وتسجيل الخروج المحفوظ ---
         window.addEventListener('load', async () => {
             applyLanguage();
-            const savedPhone = localStorage.getItem('stadepro_phone');
-            const savedCode = localStorage.getItem('stadepro_code');
-            if (savedPhone && savedCode) {
-                document.getElementById('loginPhone').value = savedPhone; document.getElementById('loginCode').value = savedCode;
-                await login(true);
-            } else { showView('login-view'); }
+            const savedPhone = localStorage.getItem('stadepro_phone'); const savedCode = localStorage.getItem('stadepro_code');
+            if (savedPhone && savedCode) { document.getElementById('loginPhone').value = savedPhone; document.getElementById('loginCode').value = savedCode; await login(true); } 
+            else { showView('login-view'); }
             setTimeout(() => { document.getElementById('init-loader').style.opacity = '0'; setTimeout(()=>document.getElementById('init-loader').style.display='none', 500); }, 300);
         });
 
@@ -302,18 +315,11 @@
 
             const { data, error } = await dbClient.from('fields').select('*').eq('owner_phone', phone).eq('activation_code', code).single();
             if(!isAutoLogin) { document.getElementById('btnLoginBtn').disabled = false; document.getElementById('btnLoginBtn').innerText = dict[currentLang].btnLogin; }
-
-            if(error || !data) {
-                if(isAutoLogin) { localStorage.removeItem('stadepro_phone'); localStorage.removeItem('stadepro_code'); showView('login-view'); return; }
-                return alert(currentLang==='ar'?"رقم الهاتف أو الرمز السري غير صحيح!":"Données incorrectes");
-            }
+            if(error || !data) { if(isAutoLogin) { logout(); return; } return alert(currentLang==='ar'?"رقم الهاتف أو الرمز غير صحيح!":"Données incorrectes"); }
             if(data.subscription_status === 'inactive') return isAutoLogin ? showView('login-view') : alert("حساب معطل / Compte inactif");
 
             const { count } = await dbClient.from('active_sessions').select('*', { count: 'exact', head: true }).eq('field_id', data.id).neq('device_id', deviceId);
-            if(count >= (data.allowed_users || 1)) {
-                if(isAutoLogin) { localStorage.removeItem('stadepro_phone'); localStorage.removeItem('stadepro_code'); showView('login-view'); return; }
-                return alert(currentLang==='ar' ? `عذراً! تم الوصول للحد الأقصى للمستخدمين (${data.allowed_users || 1}).` : `Limite atteinte. (${data.allowed_users || 1})`);
-            }
+            if(count >= (data.allowed_users || 1)) { if(isAutoLogin) { logout(); return; } return alert(currentLang==='ar' ? `عذراً! تم الوصول للحد الأقصى للمستخدمين (${data.allowed_users || 1}).` : `Limite atteinte. (${data.allowed_users || 1})`); }
 
             currentField = data; localStorage.setItem('stadepro_phone', phone); localStorage.setItem('stadepro_code', code);
             const today = new Date(); today.setHours(0,0,0,0); const endD = new Date(data.subscription_end_date); endD.setHours(0,0,0,0);
@@ -321,22 +327,43 @@
 
             if(diffDays < 0) return showView('expired-view');
             await dbClient.from('active_sessions').upsert({ field_id: data.id, device_id: deviceId, last_active: new Date() });
-            document.getElementById('ownerWelcome').innerText = currentLang==='ar'?`أهلاً، ${data.name}`:`Bienvenue, ${data.name}`; document.getElementById('subEndDate').innerText = data.subscription_end_date; document.getElementById('fieldMapLink').value = data.google_maps_link || '';
+
+            document.getElementById('ownerWelcome').innerText = currentLang==='ar'?`أهلاً، ${data.name}`:`Bienvenue, ${data.name}`;
+            document.getElementById('subEndDate').innerText = data.subscription_end_date; document.getElementById('fieldMapLink').value = data.google_maps_link || '';
             const banner = document.getElementById('renewalWarningBanner'); if(diffDays <= 1) banner.style.display = 'block'; else banner.style.display = 'none';
 
             showView('dashboard-view'); switchDashTab('reservations', document.getElementById('tabRes'));
         }
 
-        // --- 6. الاشتراك والتجديد --- 
+        // --- 5. الاشتراك والتجديد --- 
         function goToAutoRenewal() { showView('subscription-view'); setSubMode('renewal', document.getElementById('renewTabBtn')); document.getElementById('oldCode').value = currentField.activation_code; verifiedRenewalCode = true; document.getElementById('mainFormFields').style.display = 'block'; document.getElementById('fieldName').value = currentField.name; document.getElementById('location').value = currentField.location; document.getElementById('phone').value = currentField.owner_phone; document.getElementById('fieldName').disabled = true; document.getElementById('location').disabled = true; document.getElementById('phone').disabled = true; calculatePrice(); }
         function setSubMode(mode, element) { currentMode = mode; document.querySelectorAll('#subscription-view .tab').forEach(el => el.classList.remove('active')); if(element) element.classList.add('active'); if(mode === 'renewal') { document.getElementById('renewalCodeGroup').style.display='block'; document.getElementById('mainFormFields').style.display='none'; verifiedRenewalCode=false; } else { document.getElementById('renewalCodeGroup').style.display='none'; document.getElementById('mainFormFields').style.display='block'; document.getElementById('fieldName').disabled=false; document.getElementById('location').disabled=false; document.getElementById('phone').disabled=false;} calculatePrice(); }
         async function verifyOldCode() { const code = document.getElementById('oldCode').value; if(!code) return; const { data, error } = await dbClient.from('fields').select('*').eq('activation_code', code).single(); if(error || !data) return alert("الرمز غير صحيح / Code incorrect"); verifiedRenewalCode = true; document.getElementById('mainFormFields').style.display = 'block'; document.getElementById('fieldName').value = data.name; document.getElementById('location').value = data.location; document.getElementById('phone').value = data.owner_phone; document.getElementById('fieldName').disabled=true; document.getElementById('location').disabled=true; document.getElementById('phone').disabled=true; }
         function calculatePrice() { const plan = document.getElementById('plan').value; const users = parseInt(document.getElementById('usersCount').value) || 1; let subtotal = (plan === 'monthly' ? 150 : 1500) + (users > 3 ? 50 + ((users - 3) * 20) : 50); if(currentDiscount > 0) subtotal = subtotal - (subtotal * (currentDiscount / 100)); finalPrice = Math.round(subtotal); document.getElementById('totalPriceDisplay').innerText = finalPrice; }
         async function applyPromo() { const code = document.getElementById('promoCode').value.toUpperCase(); if(!code) return; const { data } = await dbClient.from('discount_codes').select('*').eq('code', code).eq('active', true).single(); if(!data) return alert("كود خاطئ / Code invalide"); currentDiscount = data.discount_percent; calculatePrice(); }
         function showPaymentInstructions() { const bank = document.getElementById('bank').value; const numSpan = document.getElementById('transferNumber'); if(!bank) return document.getElementById('paymentInstructions').style.display = 'none'; numSpan.innerText =['Bankily','Sadad','Masrvi','Click','GazaPay','Rissidi','Amanti','Bimbank','Mouripost'].includes(bank) ? "20479962" : "46154399"; document.getElementById('paymentInstructions').style.display = 'block'; }
-        async function submitSubscription() { if(!document.getElementById('subscriptionForm').checkValidity()) return document.getElementById('subscriptionForm').reportValidity(); if(currentMode === 'renewal' && !verifiedRenewalCode) return; const file = document.getElementById('paymentImage').files[0]; if(!file) return alert("أرفق الصورة / Joindre reçu"); const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = "..."; try { const fileName = `${Date.now()}_${file.name}`; await dbClient.storage.from('payments').upload(fileName, file); const imgUrl = dbClient.storage.from('payments').getPublicUrl(fileName).data.publicUrl; const reqData = { request_type: currentMode, old_activation_code: currentMode==='renewal'?document.getElementById('oldCode').value:null, field_name: document.getElementById('fieldName').value, location: document.getElementById('location').value, phone: document.getElementById('phone').value, plan: document.getElementById('plan').value, admins: parseInt(document.getElementById('usersCount').value), discount_code: document.getElementById('promoCode').value.toUpperCase(), total_price: finalPrice, bank: document.getElementById('bank').value, payment_image: imgUrl }; await dbClient.from('subscription_requests').insert([reqData]); alert("تم بنجاح / Succès"); window.location.reload(); } catch(e) { alert("خطأ / Erreur"); btn.disabled = false; } }
+        
+        async function submitSubscription() {
+            if(!document.getElementById('subscriptionForm').checkValidity()) return document.getElementById('subscriptionForm').reportValidity();
+            if(currentMode === 'renewal' && !verifiedRenewalCode) return;
+            const file = document.getElementById('paymentImage').files[0]; if(!file) return alert("أرفق الصورة / Joindre reçu");
+            const btn = document.getElementById('submitBtn'); btn.disabled = true; btn.innerText = "...";
+            try {
+                const fileName = `${Date.now()}_${file.name}`; await dbClient.storage.from('payments').upload(fileName, file);
+                const imgUrl = dbClient.storage.from('payments').getPublicUrl(fileName).data.publicUrl;
+                const reqData = { request_type: currentMode, old_activation_code: currentMode==='renewal'?document.getElementById('oldCode').value:null, field_name: document.getElementById('fieldName').value, location: document.getElementById('location').value, phone: document.getElementById('phone').value, plan: document.getElementById('plan').value, admins: parseInt(document.getElementById('usersCount').value), discount_code: document.getElementById('promoCode').value.toUpperCase(), total_price: finalPrice, bank: document.getElementById('bank').value, payment_image: imgUrl };
+                await dbClient.from('subscription_requests').insert([reqData]);
+                
+                if(currentDiscount > 0 && reqData.discount_code) {
+                    const { data: promoData } = await dbClient.from('discount_codes').select('used_count').eq('code', reqData.discount_code).single();
+                    if(promoData) await dbClient.from('discount_codes').update({ used_count: promoData.used_count + 1 }).eq('code', reqData.discount_code);
+                }
+                
+                document.getElementById('successModal').style.display = 'flex';
+            } catch(e) { alert("خطأ / Erreur"); btn.disabled = false; }
+        }
 
-        // --- 7. الحجوزات والتخزين المؤقت --- 
+        // --- 6. الحجوزات والتخزين --- 
         function switchDashTab(tabId, el) { document.querySelectorAll('#dashboard-view .tab').forEach(e => e.classList.remove('active')); el.classList.add('active');['dash-reservations', 'dash-statistics', 'dash-settings'].forEach(id => document.getElementById(id).style.display = 'none'); document.getElementById('dash-'+tabId).style.display = 'block'; if(tabId==='statistics') renderStatistics(); }
         async function saveFieldSettings() { const mapLink = document.getElementById('fieldMapLink').value; await dbClient.from('fields').update({ google_maps_link: mapLink }).eq('id', currentField.id); currentField.google_maps_link = mapLink; alert("تم الحفظ / Enregistré"); }
 
@@ -359,7 +386,8 @@
 
         function openResModal() { document.getElementById('resModal').style.display = 'flex'; }
         async function saveReservation() {
-            const type = document.getElementById('resType').value; const sDate = document.getElementById('resDate').value; const timeStr = document.getElementById('resTime').value; const team = document.getElementById('resTeam').value; const phone = document.getElementById('resPhone').value; const dur = document.getElementById('resDuration').value; const price = document.getElementById('resPrice').value;
+            const type = document.getElementById('resType').value;
+            const sDate = document.getElementById('resDate').value; const timeStr = document.getElementById('resTime').value; const team = document.getElementById('resTeam').value; const phone = document.getElementById('resPhone').value; const dur = document.getElementById('resDuration').value; const price = document.getElementById('resPrice').value;
             if(!sDate || !timeStr || !team || !phone) return alert("أكمل البيانات / Remplissez tout");
             let dates =[];
             if(type === 'single') { dates.push(sDate); } else {
@@ -391,27 +419,45 @@
             document.getElementById('statTotalRes').innerText = allReservations.length; document.getElementById('statTotalRev').innerText = totalRev; document.getElementById('statBestDay').innerText = bestD; document.getElementById('statBestHour').innerText = bestH;
         }
 
-        // --- 8. الإدارة (المشرف) --- 
+        // --- 7. الإدارة (المشرف) --- 
         async function adminLogin() {
             if(!dbClient) return; const u = document.getElementById('adminUsername').value; const p = document.getElementById('adminPassword').value;
             const { data } = await dbClient.from('users').select('*').eq('phone', u).eq('password', p).eq('role', 'admin').single();
             if(!data) return alert("خطأ / Error"); document.getElementById('adminLoginModal').style.display='none'; document.getElementById('adminUsername').value=''; document.getElementById('adminPassword').value=''; showView('admin-view');
         }
-        function switchAdminTab(tab, el) { document.querySelectorAll('#admin-view .tab').forEach(e => e.classList.remove('active')); el.classList.add('active');['adminRequestsView','adminFieldsView','adminPromosView'].forEach(id => document.getElementById(id).style.display='none'); if(tab==='requests') { document.getElementById('adminRequestsView').style.display='block'; loadAdminRequests(); } if(tab==='fields') { document.getElementById('adminFieldsView').style.display='block'; loadAdminFields(); } if(tab==='promos') { document.getElementById('adminPromosView').style.display='block'; loadPromos(); } }
+        function switchAdminTab(tab, el) {
+            document.querySelectorAll('#admin-view .tab').forEach(e => e.classList.remove('active')); el.classList.add('active');['adminRequestsView','adminFieldsView','adminPromosView'].forEach(id => document.getElementById(id).style.display='none');
+            if(tab==='requests') { document.getElementById('adminRequestsView').style.display='block'; loadAdminRequests(); } if(tab==='fields') { document.getElementById('adminFieldsView').style.display='block'; loadAdminFields(); } if(tab==='promos') { document.getElementById('adminPromosView').style.display='block'; loadPromos(); }
+        }
 
         async function loadAdminRequests() {
             const { data } = await dbClient.from('subscription_requests').select('*').eq('status','pending'); globalAdminRequests=data||[];
             const tbody = document.getElementById('requestsTable'); tbody.innerHTML='';
-            if(globalAdminRequests.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="text-center">لا توجد طلبات معلقة.</td></tr>`; return; }
+            if(globalAdminRequests.length === 0) { tbody.innerHTML = `<tr><td colspan="9" class="text-center">لا توجد طلبات.</td></tr>`; return; }
             globalAdminRequests.forEach(req => { tbody.innerHTML+=`<tr><td>${req.request_type==='renewal'?'تجديد':'جديد'}</td><td><strong>${req.field_name}</strong></td><td>${req.location}</td><td dir="ltr">${req.phone}</td><td>${req.plan}</td><td style="color:var(--primary); font-weight:bold;">${req.total_price}</td><td>${req.bank}</td><td><a href="${req.payment_image}" target="_blank">صورة</a></td><td class="action-btns"><button class="btn" style="padding:4px 8px; font-size:11px;" onclick="acceptRequest('${req.id}')">قبول</button> <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="rejectRequest('${req.id}')">رفض</button></td></tr>`; });
         }
-        
+
         async function acceptRequest(id) {
             const r = globalAdminRequests.find(x=>x.id===id); if(!confirm('قبول وتفعيل؟')) return;
             let code = r.old_activation_code; let endDateStr = '';
-            if(r.request_type==='new') { code = generateComplexCode(8); let d = new Date(); if(r.plan==='monthly') d.setMonth(d.getMonth()+1); else d.setFullYear(d.getFullYear()+1); endDateStr = d.toISOString().split('T')[0]; const { error: fErr } = await dbClient.from('fields').insert([{name:r.field_name, location:r.location, owner_phone:r.phone, activation_code:code, subscription_end_date:endDateStr, allowed_users: r.admins}]); if(fErr) return alert("خطأ! رقم الهاتف مسجل مسبقاً."); } 
-            else { const { data: oldField } = await dbClient.from('fields').select('subscription_end_date').eq('activation_code', code).single(); let d = new Date(); if(oldField && new Date(oldField.subscription_end_date) > d) d = new Date(oldField.subscription_end_date); if(r.plan==='monthly') d.setMonth(d.getMonth()+1); else d.setFullYear(d.getFullYear()+1); endDateStr = d.toISOString().split('T')[0]; await dbClient.from('fields').update({subscription_end_date:endDateStr, allowed_users: r.admins}).eq('activation_code',code); }
-            await dbClient.from('subscription_requests').update({status:'accepted'}).eq('id',id); loadAdminRequests(); alert("تم القبول. الرمز: " + code); window.open(`https://wa.me/${r.phone}?text=${encodeURIComponent(`أهلاً بك في StadePro 🎉\nتم التفعيل.\nالرمز السري: *${code}*\nصالح حتى: ${endDateStr}`)}`, '_blank');
+            
+            if(r.request_type==='new') { 
+                code = generateComplexCode(8); 
+                let d = new Date(); if(r.plan==='monthly') d.setMonth(d.getMonth()+1); else d.setFullYear(d.getFullYear()+1); endDateStr = d.toISOString().split('T')[0]; 
+                const { error: fErr } = await dbClient.from('fields').insert([{name:r.field_name, location:r.location, owner_phone:r.phone, activation_code:code, subscription_end_date:endDateStr, allowed_users: r.admins}]); 
+                if(fErr) return alert("خطأ! يبدو أن رقم الهاتف مسجل مسبقاً."); 
+            } else { 
+                const { data: oldField } = await dbClient.from('fields').select('subscription_end_date').eq('activation_code', code).single(); 
+                let d = new Date(); if(oldField && new Date(oldField.subscription_end_date) > d) d = new Date(oldField.subscription_end_date); 
+                if(r.plan==='monthly') d.setMonth(d.getMonth()+1); else d.setFullYear(d.getFullYear()+1); endDateStr = d.toISOString().split('T')[0]; 
+                await dbClient.from('fields').update({subscription_end_date:endDateStr, allowed_users: r.admins}).eq('activation_code',code); 
+            }
+            
+            await dbClient.from('subscription_requests').update({status:'accepted'}).eq('id',id); loadAdminRequests(); alert("تم القبول."); 
+            
+            const planName = r.plan === 'monthly' ? 'شهري' : 'سنوي';
+            const msg = `مرحباً بك في *StadePro* 🎉\nتم قبول طلبك بنجاح! ✅\n\n🏟️ الملعب: ${r.field_name}\n📅 الاشتراك: ${planName}\n👥 عدد المستخدمين: ${r.admins || 1}\n⏳ صالح حتى: ${endDateStr}\n\n🔑 الرمز السري الخاص بك: *${code}*\n\n(يرجى الاحتفاظ بالرمز)`;
+            window.open(`https://wa.me/${r.phone}?text=${encodeURIComponent(msg)}`, '_blank');
         }
 
         async function rejectRequest(id) { if(confirm('رفض؟')) { await dbClient.from('subscription_requests').update({status:'rejected'}).eq('id',id); loadAdminRequests(); } }
@@ -419,14 +465,10 @@
         async function loadAdminFields() {
             const { data } = await dbClient.from('fields').select('*').order('created_at',{ascending:false}); const tb = document.getElementById('adminFieldsTable'); tb.innerHTML='';
             if(!data || data.length===0) { tb.innerHTML = `<tr><td colspan="7" class="text-center">لا توجد ملاعب</td></tr>`; return; }
-            data.forEach(f => tb.innerHTML+=`<tr><td>${f.name}</td><td dir="ltr">${f.owner_phone}</td><td style="color:var(--danger); font-weight:bold;">${f.subscription_end_date}</td><td>${f.allowed_users || 1} <button class="btn btn-outline" style="padding:2px 5px; font-size:10px;" onclick="editAllowedUsers('${f.id}', ${f.allowed_users || 1})">تعديل</button></td><td>${f.subscription_status==='active'?'<span class="badge badge-active">فعال</span>':'<span class="badge badge-inactive">معطل</span>'}</td><td>${f.activation_code} <button class="btn btn-outline" style="padding:2px 5px; font-size:10px;" onclick="copyCode('${f.activation_code}')">نسخ</button></td><td class="action-btns"><button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openRenewModal('${f.id}','${f.subscription_end_date}')">تجديد</button> <button class="btn btn-warning" style="padding:4px 8px; font-size:11px;" onclick="toggleFieldStatus('${f.id}','${f.subscription_status}')">${f.subscription_status==='active'?'تعطيل':'تفعيل'}</button> <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteField('${f.id}')">حذف</button></td></tr>`);
+            data.forEach(f => { tb.innerHTML+=`<tr><td>${f.name}</td><td dir="ltr">${f.owner_phone}</td><td style="color:var(--danger); font-weight:bold;">${f.subscription_end_date}</td><td>${f.allowed_users || 1} <button class="btn btn-outline" style="padding:2px 5px; font-size:10px;" onclick="editAllowedUsers('${f.id}', ${f.allowed_users || 1})">تعديل</button></td><td>${f.subscription_status==='active'?'<span class="badge badge-active">فعال</span>':'<span class="badge badge-inactive">معطل</span>'}</td><td>${f.activation_code} <button class="btn btn-outline" style="padding:2px 5px; font-size:10px;" onclick="copyCode('${f.activation_code}')">نسخ</button></td><td class="action-btns"><button class="btn" style="padding:4px 8px; font-size:11px;" onclick="openRenewModal('${f.id}','${f.subscription_end_date}')">تجديد</button> <button class="btn btn-warning" style="padding:4px 8px; font-size:11px;" onclick="toggleFieldStatus('${f.id}','${f.subscription_status}')">${f.subscription_status==='active'?'تعطيل':'تفعيل'}</button> <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="deleteField('${f.id}')">حذف</button></td></tr>`; });
         }
         
-        async function editAllowedUsers(id, current) {
-            const newLimit = prompt("أدخل الحد الأقصى للمستخدمين:", current);
-            if(newLimit !== null && newLimit !== "" && !isNaN(newLimit) && parseInt(newLimit) > 0) { await dbClient.from('fields').update({allowed_users: parseInt(newLimit)}).eq('id', id); loadAdminFields(); }
-        }
-
+        async function editAllowedUsers(id, current) { const newLimit = prompt("الحد الأقصى للمستخدمين:", current); if(newLimit !== null && newLimit !== "" && !isNaN(newLimit) && parseInt(newLimit) > 0) { await dbClient.from('fields').update({allowed_users: parseInt(newLimit)}).eq('id', id); loadAdminFields(); } }
         async function toggleFieldStatus(id, s) { await dbClient.from('fields').update({subscription_status: s==='active'?'inactive':'active'}).eq('id',id); loadAdminFields(); }
         async function deleteField(id) { if(confirm('حذف الملعب؟')) { await dbClient.from('fields').delete().eq('id',id); loadAdminFields(); } }
         function openRenewModal(id, date) { currentRenewFieldId=id; currentRenewFieldEndDate=date; document.getElementById('renewFieldModal').style.display='flex'; }
@@ -442,7 +484,7 @@
             const n = document.getElementById('manFieldName').value, p = document.getElementById('manFieldPhone').value, sd = document.getElementById('manFieldStartDate').value, pl = document.getElementById('manFieldPlan').value; const usersCount = parseInt(document.getElementById('manFieldUsers').value) || 1;
             if(!n || !p || !sd) return alert("أكمل البيانات");
             let d = new Date(sd); if(pl==='monthly') d.setMonth(d.getMonth()+1); else d.setFullYear(d.getFullYear()+1); const c = generateComplexCode(8);
-            await dbClient.from('fields').insert([{name:n, location:'غير محدد', owner_phone:p, activation_code:c, subscription_end_date:d.toISOString().split('T')[0], allowed_users: usersCount}]);
+            await dbClient.from('fields').insert([{name:n, location:'-', owner_phone:p, activation_code:c, subscription_end_date:d.toISOString().split('T')[0], allowed_users: usersCount}]);
             document.getElementById('addManualFieldModal').style.display='none'; loadAdminFields(); alert("تم الحفظ. الرمز: "+c); copyCode(c);
         }
         
